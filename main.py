@@ -11,9 +11,9 @@ import multiprocessing
 """
 
 # %%
-import webbrowser
+# import webbrowser
 
-from bs4 import BeautifulSoup, NavigableString, Tag 
+# from bs4 import BeautifulSoup, NavigableString, Tag 
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 import  os
@@ -57,11 +57,10 @@ class Scrape:
 
 # %%
 	
-	def final_checkout(self):
+	def final_checkout(self,driver):
 		try:
 			driver.implicitly_wait(30)
 			cod = '/html/body/div[1]/div/div[2]/div[2]/div/section[1]/div[3]/div/div[1]/span[2]'
-
 			address = '/html/body/div[1]/div/div[2]/div[2]/div/section[3]/article/section[1]/div[2]/div[2]/div/div/span[1]/label'
 			endgame = '/html/body/div[1]/div/div[2]/div[2]/div/section[3]/article/form/section/div[2]/font[1]/font/font/font/input'
 
@@ -70,10 +69,13 @@ class Scrape:
 			driver.find_element_by_xpath(address).click()
 			driver.implicitly_wait(3)
 			#         driver.find_element_by_xpath(endgame).click() <-- dont uncomment this
+
+			driver.close()
+
 		except:
 			try_again("final_check")
 
-	def login(self,e,p):
+	def login(self,e,p,driver):
 		try:
 				mail = '/html/body/div[1]/div/div[2]/div[1]/div/section/div[1]/form/div[1]/input'
 				passw = '/html/body/div[1]/div/div[2]/div[1]/div/section/div[1]/form/div[2]/input'
@@ -90,13 +92,13 @@ class Scrape:
 				if(resp):
 				    check.click()
 
-				self.final_checkout()
+				self.final_checkout(driver)
 
 		except:
 			pass
 
 	
-	def check_out(self,e,p):
+	def check_out(self,e,p,driver):
 		try:
 			element = driver.find_element_by_link_text("No, grazie")
 			thanks = element.is_displayed()
@@ -110,14 +112,13 @@ class Scrape:
 			if(resp):
 				final.click()
 
-			self.login(e,p)
+			self.login(e,p,driver)
 		except:
 				pass
 
-	def available(self,e,p):
+	def available(self,e,p,driver):
 		time.sleep(5)
 		try:
-
 			accept = driver.find_element_by_xpath('//*[@id="onetrust-accept-btn-handler"]')
 			yes=accept.is_displayed()
 			if(yes):
@@ -125,46 +126,55 @@ class Scrape:
 		except:
 			pass 
 		try:
+			
 			element = driver.find_element_by_link_text("Aggiungi al carrello")
 			# print value
 			yes=element.is_displayed()
 			if(yes):
+				print('Adding to the cart')
 				element.click()
 				time.sleep(1)
-				self.check_out(e,p)
+				self.check_out(e,p,driver)
 		except:
-			self.try_again("product not avai")  
 
-	def run(self,df):
+			print('Again checking for unavailable product')
+			self.available(e,p,driver)
+
+	def run(self,i):
 		print( multiprocessing.current_process().name)
-		print(type(df))
+		# print(type(df))
 
-		for i in range(len(df)):
-
-			driver = webdriver.Chrome(ChromeDriverManager().install(),options=self.chrome_options)
-			driver.get(df['PRODUCT'][i])
-			self.available(df['EMAIL'][i],df['password'][i])
-			driver.close()
-			time.sleep(3)
-
-
+		driver = webdriver.Chrome(ChromeDriverManager().install(),options=self.chrome_options)
+		print(f"Opening the {i} th link")
+		print("---------",str(i))
+		driver.get(self.df['PRODUCT'][i])
+		self.available(self.df['EMAIL'][i],self.df['password'][i],driver)
+		# driver.close()
+		time.sleep(3)
 
 if __name__=='__main__':
 	obj=Scrape()
-	first_args=obj.df
-	second_args=obj.df
+	# first_args=obj.df
+	# second_args=obj.df
 	#import pdb;pdb.set_trace()
 
+	i=0
+	while i<len(obj.df):
+		time.sleep(2)
+		service = multiprocessing.Process(name='my_service', target=obj.run,args=(i,))
+		service.start()
 
-	service = multiprocessing.Process(name='my_service', target=obj.run,args=(first_args,))
-	print('first')
-	service2 = multiprocessing.Process(name='next', target=obj.run,args=(second_args,))
-	print('second')
-	service.start()
-	service2.start()
-	
-	
-
+		i+=1
+		if i<len(obj.df):
+			service1 = multiprocessing.Process(name='my_service', target=obj.run,args=(i,))
+			service1.start()
+		
+		i+=1
+		if i<len(obj.df):
+			service2 = multiprocessing.Process(name='my_service', target=obj.run,args=(i,))
+			service2.start()
+		
+		i+=1
 
 	#
 
