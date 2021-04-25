@@ -135,12 +135,15 @@ class Scrape:
 		except:
 			self.try_again("product not avai")  
 
-	def run(self):
+	def run(self,df):
 		print( multiprocessing.current_process().name)
-		for i in range(len(self.df)):
+		print(type(df))
+
+		for i in range(len(df)):
+
 			driver = webdriver.Chrome(ChromeDriverManager().install(),options=self.chrome_options)
-			driver.get(self.df['PRODUCT'][i])
-			self.available(self.df['EMAIL'][i],self.df['password'][i])
+			driver.get(df['PRODUCT'][i])
+			self.available(df['EMAIL'][i],df['password'][i])
 			driver.close()
 			time.sleep(3)
 
@@ -148,14 +151,20 @@ class Scrape:
 
 if __name__=='__main__':
 	obj=Scrape()
-	
-	service = multiprocessing.Process(name='my_service', target=obj.run)
-	print('ok')
-	service2 = multiprocessing.Process(name='next', target=obj.run)
-	print('ok')
+	first_args=obj.df
+	second_args=obj.df
+	#import pdb;pdb.set_trace()
+
+
+	service = multiprocessing.Process(name='my_service', target=obj.run,args=(first_args,))
+	print('first')
+	service2 = multiprocessing.Process(name='next', target=obj.run,args=(second_args,))
+	print('second')
 	service.start()
 	service2.start()
 	
+	
+
 
 	#
 
